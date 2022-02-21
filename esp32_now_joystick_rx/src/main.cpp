@@ -24,6 +24,9 @@ typedef struct data_structure
 // Create a struct_message called receivedData
 data_structure receivedData;
 
+char pressedButton[3] = "0";
+
+
 //=============================================================================
 // callback function that will be executed when ESP-NOW data is received
 void printRecieved(int xRecieved, int yRecieved, int len)
@@ -37,21 +40,24 @@ void printRecieved(int xRecieved, int yRecieved, int len)
   // Serial.print("isButtonPressed: ");
   // Serial.println(receivedData.isButtonPressed);
   Serial.print("pressedButton: ");
-  Serial.println(receivedData.buttonCMD);
+      strcpy(pressedButton,receivedData.buttonCMD);
+
+Serial.print(pressedButton);
+  //Serial.println(receivedData.buttonCMD);
   Serial.println();
 }
 
 void handleInput(int xRecieved, int yRecieved, char buttonPressed)
 {
-  if (buttonPressed == 'a')
+  if (buttonPressed == 'A')
   {
     // DO SOMETHING
-    Serial.print("A");
+    Serial.print("HANDLE A");
   }
   else if(buttonPressed == 'S')
   {
     // DO SOMETHING ELSE
-    Serial.print("STICK");
+    Serial.print("HANDLE START");
   }
   // y_servo.write(90 + int(receivedData.x));
   // x_servo.write(90 + int(receivedData.y));
@@ -62,7 +68,7 @@ void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
   memcpy(&receivedData, incomingData, sizeof(receivedData));
 
   printRecieved(int(receivedData.x), int(receivedData.y), len);
-  handleInput(int(receivedData.x), int(receivedData.y), char(receivedData.buttonCMD));
+  handleInput(int(receivedData.x), int(receivedData.y), char(receivedData.buttonCMD[3]));
 }
 
 void setup()

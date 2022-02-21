@@ -31,32 +31,31 @@ data_structure sending_data;
 
 char pressedButton[3] = "0";
 
-// Define which pins are used for each button
-// Right side pins
-#define BTN_START_PIN 36
-#define BTN_Z_PIN 16
-#define BTN_L_PIN 32
-#define BTN_B_PIN 14
-#define BTN_A_PIN 12
-// Left side pins
-#define BTN_R_PIN 23
-#define BTN_C_DOWN_PIN 22
-#define BTN_C_LEFT_PIN 17
-#define BTN_C_UP_PIN 19
-#define BTN_C_RIGHT_PIN 18
+const int ledPin = 4; // the number of the LED pin
 
-// D-PAD
-#define DUP 32
-#define DLEFT 33
-#define DDOWN 27
-#define DRIGHT 14
+// Define which pins are used for each button
+const int BTN_START_PIN = 36; // the number of the pushbutton pin
+const int BTN_B_PIN = 14;     // the number of the pushbutton pin
+const int BTN_A_PIN = 12;     // the number of the pushbutton pin
+
+const int BTN_CUP_PIN = 19; // the number of the pushbutton pin
+const int BTN_CL_PIN = 17;  // the number of the pushbutton pin
+const int BTN_CR_PIN = 18;  // the number of the pushbutton pin
+const int BTN_CD_PIN = 22;  // the number of the pushbutton pin
+
+const int BTN_DUP_PIN = 25; // the number of the pushbutton pin
+const int BTN_DL_PIN = 26;  // the number of the pushbutton pin
+const int BTN_DR_PIN = 33;  // the number of the pushbutton pin
+const int BTN_DD_PIN = 27;  // the number of the pushbutton pin
+
+const int BTN_SR_PIN = 23; // the number of the pushbutton pin
+const int BTN_SL_PIN = 32; // the number of the pushbutton pin
+
+const int BTN_Z_PIN = 16; // the number of the pushbutton pin
 
 // sticks
 const int JOY_STICK_VRX = 39;
 const int JOY_STICK_VRY = 34;
-
-const int buttonCount = 14;
-int buttons[buttonCount] = {BTN_START_PIN, BTN_Z_PIN, BTN_L_PIN, BTN_B_PIN, BTN_A_PIN, BTN_R_PIN, BTN_C_DOWN_PIN, BTN_C_LEFT_PIN, BTN_C_UP_PIN, BTN_C_RIGHT_PIN, DUP, DLEFT, DDOWN, DRIGHT}; // 4 face buttons, 2 joy buttons
 
 int previousStartState = HIGH;
 int previousZState = HIGH;
@@ -160,200 +159,315 @@ void handleButtons()
 {
 
     int currentStartState = digitalRead(BTN_START_PIN);
-    int currentZState = digitalRead(BTN_Z_PIN);
-    int currentLState = digitalRead(BTN_L_PIN);
     int currentBState = digitalRead(BTN_B_PIN);
     int currentAState = digitalRead(BTN_A_PIN);
-    int currentRState = digitalRead(BTN_R_PIN);
+    int currentSRState = digitalRead(BTN_SR_PIN);
+    int currentSLState = digitalRead(BTN_SL_PIN);
+    int currentZState = digitalRead(BTN_Z_PIN);
 
-    int currentCDState = digitalRead(BTN_C_DOWN_PIN);
-    int currentCLState = digitalRead(BTN_C_LEFT_PIN);
-    int currentCUState = digitalRead(BTN_C_UP_PIN);
-    int currentCRState = digitalRead(BTN_C_RIGHT_PIN);
+    int currentCDState = digitalRead(BTN_CD_PIN);
+    int currentCLState = digitalRead(BTN_CL_PIN);
+    int currentCUPState = digitalRead(BTN_CUP_PIN);
+    int currentCRState = digitalRead(BTN_CR_PIN);
 
-    int currentDPadUpState = digitalRead(DUP);
-    int currentDPadLeftState = digitalRead(DLEFT);
-    int currentDPadDownState = digitalRead(DDOWN);
-    int currentDPadRightState = digitalRead(DRIGHT);
+    int currentDUPState = digitalRead(BTN_DUP_PIN);
+    int currentDLState = digitalRead(BTN_DL_PIN);
+    int currentDDState = digitalRead(BTN_DD_PIN);
+    int currentDRState = digitalRead(BTN_DR_PIN);
 
     //-------------------HANDLE BUTTONS
 
-    //--RIGHT SIDE BUTTONS; ZBXY
-    if (currentStartState != previousStartState)
-    {
-        if (currentStartState == LOW)`
+    /*
+        //--RIGHT SIDE BUTTONS; ZBXY
+        if (currentStartState != previousStartState)
         {
-            Serial.println(F("START"));
-            
-            strcpy(pressedButton,"S");
+            if (currentStartState == HIGH)
+            {
+                Serial.println(F("START"));
 
+                strcpy(pressedButton, "S");
+            }
+            previousStartState = currentStartState;
         }
-    }
-    previousStartState = currentStartState;
 
-    if (currentZState != previousZState)
-    {
-        if (currentZState == LOW)
+        else if (currentZState != previousZState)
         {
-            Serial.println(F("Z"));
-            strcpy(pressedButton,"Z");
-            
+            if (currentZState == LOW)
+            {
+                Serial.println(F("Z"));
+                strcpy(pressedButton, "Z");
+            }
+            previousZState = currentZState;
         }
-    }
-    previousZState = currentZState;
 
-    if (previousLState != currentLState)
-    {
-        if (currentLState == LOW)
+        else if (previousLState != currentLState)
         {
-            Serial.println(F("L"));
-            strcpy(pressedButton,"L");
-            
+            if (currentLState == LOW)
+            {
+                Serial.println(F("L"));
+                strcpy(pressedButton, "L");
+            }
+            previousLState = currentLState;
         }
-    }
-    previousLState = currentLState;
 
-    if (previousBState != currentBState)
-    {
-        if (currentBState == LOW)
+        else if (currentBState != previousBState)
         {
-            Serial.println(F("B"));
-            strcpy(pressedButton,"B");
-            
+            if (currentBState == LOW)
+            {
+                Serial.println(F("B"));
+                strcpy(pressedButton, "B");
+            }
+            previousBState = currentBState;
         }
-    }
-    previousBState = currentBState;
 
-    if (currentAState != previousAState)
-    {
-        if (currentAState == LOW)
+        else if (currentAState != previousAState)
         {
-            Serial.println(F("A"));
-            strcpy(pressedButton,"A");
-            
+            if (currentAState == LOW)
+            {
+                Serial.println(F("A"));
+                strcpy(pressedButton, "A");
+            }
+            previousAState = currentAState;
         }
-    }
-    previousRState = currentRState;
 
-    if (currentRState != previousRState)
-    {
-        if (currentRState == LOW)
+        // handles no buttons pressed
+
+        else if (currentRState != previousRState)
         {
-            Serial.println(F("R"));
-            strcpy(pressedButton,"R");
-         
+            if (currentRState == LOW)
+            {
+                Serial.println(F("R"));
+                strcpy(pressedButton, "R");
+            }
+            previousRState = currentRState;
         }
-    }
-    previousRState = currentRState;
 
-    //----------C-PAD
+        //----------C-PAD
 
-    if (currentCDState != previousCDState)
-    {
-        if (currentCDState == LOW)
+        else if (currentCDState != previousCDState)
         {
-            Serial.println(F("C DOWN"));
-            strcpy(pressedButton,"CD");
-
+            if (currentCDState == LOW)
+            {
+                Serial.println(F("C DOWN"));
+                strcpy(pressedButton, "CD");
+            }
+            previousCDState = currentCDState;
         }
-    }
-    previousCDState = currentCDState;
 
-    if (currentCLState != previousCLState)
-    {
-        if (currentCLState == LOW)
+        else if (currentCLState != previousCLState)
         {
-            Serial.println(F("C LEFT"));
-            strcpy(pressedButton,"CL");
-
+            if (currentCLState == LOW)
+            {
+                Serial.println(F("C LEFT"));
+                strcpy(pressedButton, "CL");
+            }
+            previousCLState = currentCLState;
         }
-    }
-    previousCLState = currentCLState;
 
-    if (currentCUState != previousCUState)
-    {
-        if (currentCUState == LOW)
+        else if (currentCUState != previousCUState)
         {
-            Serial.println(F("C UP"));
-            strcpy(pressedButton,"CU");
-
+            if (currentCUState == LOW)
+            {
+                Serial.println(F("C UP"));
+                strcpy(pressedButton, "CU");
+            }
+            previousCUState = currentCUState;
         }
-    }
-    previousCUState = currentCUState;
 
-    if (currentCRState != previousCRState)
-    {
-        if (currentCRState == LOW)
+        else if (currentCRState != previousCRState)
         {
-            Serial.println(F("C RIGHT"));
-            strcpy(pressedButton,"CR");
-
+            if (currentCRState == LOW)
+            {
+                Serial.println(F("C RIGHT"));
+                strcpy(pressedButton, "CR");
+            }
+            previousCRState = currentCRState;
         }
-    }
-    previousCRState = currentCRState;
 
-    //----------D-PAD
-    if (currentDPadUpState != previousDPadUpState)
-    {
-        if (currentDPadUpState == LOW)
+        //----------D-PAD
+        else if (currentDPadUpState != previousDPadUpState)
         {
-            Serial.println(F("DPAD UP"));
-            strcpy(pressedButton,"DU");
-
+            if (currentDPadUpState == LOW)
+            {
+                Serial.println(F("DPAD UP"));
+                strcpy(pressedButton, "DU");
+            }
+            previousDPadUpState = currentDPadUpState;
         }
-    }
-    previousDPadUpState = currentDPadUpState;
 
-    if (currentDPadLeftState != previousDPadLeftState)
-    {
-        if (currentDPadLeftState == LOW)
+        else if (currentDPadLeftState != previousDPadLeftState)
         {
-            Serial.println(F("DPAD_LEFT"));
-            strcpy(pressedButton,"DL");
-   
+            if (currentDPadLeftState == LOW)
+            {
+                Serial.println(F("DPAD_LEFT"));
+                strcpy(pressedButton, "DL");
+            }
+            previousDPadLeftState = currentDPadLeftState;
         }
-    }
-    previousDPadLeftState = currentDPadLeftState;
 
-    if (currentDPadDownState != previousDPadDownState)
-    {
-        if (currentDPadDownState == LOW)
+        else if (currentDPadDownState != previousDPadDownState)
         {
-            Serial.println(F("DPAD_DOWN"));
-            strcpy(pressedButton,"DD");
-    
+            if (currentDPadDownState == LOW)
+            {
+                Serial.println(F("DPAD_DOWN"));
+                strcpy(pressedButton, "DD");
+            }
+            previousDPadDownState = currentDPadDownState;
         }
-    }
-    previousDPadDownState = currentDPadDownState;
 
-    if (currentDPadRightState != previousDPadRightState)
-    {
-        if (currentDPadRightState == LOW)
+        else if (currentDPadRightState != previousDPadRightState)
         {
-            Serial.println(F("DPAD_RIGHT"));
-            strcpy(pressedButton,"DR");
-   
+            if (currentDPadRightState == LOW)
+            {
+                Serial.println(F("DPAD_RIGHT"));
+                strcpy(pressedButton, "DR");
+            }
+            previousDPadRightState = currentDPadRightState;
         }
-    }
-    previousDPadRightState = currentDPadRightState;
+        else
+        {
+            // turn LED off:
+            strcpy(pressedButton, "0");
+            digitalWrite(ledPin, LOW);
+        }
 
-    // handles no buttons pressed
-    if (currentStartState == HIGH && currentDPadRightState == HIGH)
+    */
+
+    if (currentBState == HIGH)
     {
-        Serial.println(F("NONE"));
-        strcpy(pressedButton,"0");
+        Serial.println("B");
+        strcpy(pressedButton, "B");
+        digitalWrite(ledPin, HIGH);
+    }
 
+    else if (currentStartState == HIGH)
+    {
+        Serial.println("START");
+        strcpy(pressedButton, "S");
+        digitalWrite(ledPin, HIGH);
+    }
+
+    else if (currentAState == HIGH)
+    {
+        Serial.println("A");
+        strcpy(pressedButton, "A");
+        // turn LED on:
+        digitalWrite(ledPin, HIGH);
+    }
+
+    else if (currentSRState == HIGH)
+    {
+        Serial.println("SR");
+        strcpy(pressedButton, "SR");
+        // turn LED on:
+        digitalWrite(ledPin, HIGH);
+    }
+
+    else if (currentSLState == HIGH)
+    {
+        Serial.println("SL");
+        strcpy(pressedButton, "SL");
+        // turn LED on:
+        digitalWrite(ledPin, HIGH);
+    }
+
+    else if (currentZState == HIGH)
+    {
+        Serial.println("Z");
+        strcpy(pressedButton, "Z");
+        // turn LED on:
+        digitalWrite(ledPin, HIGH);
+    }
+
+    //~~~~~~~C PAD
+    else if (currentCUPState == HIGH)
+    {
+        Serial.println("CU");
+        strcpy(pressedButton, "CU");
+        digitalWrite(ledPin, HIGH);
+    }
+
+/*
+    else if (currentCDState == HIGH)
+    {
+        Serial.println("CD");
+        strcpy(pressedButton, "CD");
+        digitalWrite(ledPin, HIGH);
+    }
+*/
+    else if (currentCLState == HIGH)
+    {
+        Serial.println("CL");
+        strcpy(pressedButton, "CL");
+        digitalWrite(ledPin, HIGH);
+    }
+    else if (currentCRState == HIGH)
+    {
+        Serial.println("CR");
+        strcpy(pressedButton, "CR");
+        digitalWrite(ledPin, HIGH);
+    }
+
+    //~~~~~~~D PAD
+    else if (currentDUPState == HIGH)
+    {
+        Serial.println("DU");
+        strcpy(pressedButton, "DU");
+        digitalWrite(ledPin, HIGH);
+    }
+
+    else if (currentDDState == HIGH)
+    {
+        Serial.println("DD");
+        strcpy(pressedButton, "DD");
+        digitalWrite(ledPin, HIGH);
+    }
+
+    else if (currentDLState == HIGH)
+    {
+        Serial.println("DL");
+        strcpy(pressedButton, "DL");
+        digitalWrite(ledPin, HIGH);
+    }
+    else if (currentDRState == HIGH)
+    {
+        Serial.println("DR");
+        strcpy(pressedButton, "DR");
+        digitalWrite(ledPin, HIGH);
+    }
+
+    else
+    {
+        strcpy(pressedButton, "0");
+        // turn LED off:
+        digitalWrite(ledPin, LOW);
     }
 }
 
 void setup()
 {
+      pinMode(ledPin, OUTPUT);
+
+    pinMode(BTN_START_PIN, INPUT);
+    pinMode(BTN_B_PIN, INPUT_PULLDOWN);
+    pinMode(BTN_A_PIN, INPUT_PULLDOWN);
+
+    pinMode(BTN_CUP_PIN, INPUT_PULLDOWN);
+    pinMode(BTN_CL_PIN, INPUT_PULLDOWN);
+    pinMode(BTN_CR_PIN, INPUT_PULLDOWN);
+    pinMode(BTN_CD_PIN, INPUT_PULLDOWN);
+
+    pinMode(BTN_DUP_PIN, INPUT_PULLDOWN);
+    pinMode(BTN_DL_PIN, INPUT_PULLDOWN);
+    pinMode(BTN_DR_PIN, INPUT_PULLDOWN);
+    pinMode(BTN_DD_PIN, INPUT_PULLDOWN);
+
+    pinMode(BTN_SR_PIN, INPUT_PULLDOWN);
+    pinMode(BTN_SL_PIN, INPUT_PULLDOWN);
+    pinMode(BTN_Z_PIN, INPUT_PULLDOWN);
+
     pinMode(JOY_STICK_VRX, INPUT);
     pinMode(JOY_STICK_VRY, INPUT);
-    for (int i = 0; i < buttonCount; i++)
-    {
-        pinMode(buttons[i], INPUT_PULLUP);
-    }
 
     Serial.begin(115200);
 
@@ -391,6 +505,7 @@ void setup()
 void loop()
 {
     //----HANDLE OLED
+    /*
     {
         u8g2.firstPage();
         do
@@ -398,6 +513,7 @@ void loop()
             drawGUI(u8g2);
         } while (u8g2.nextPage());
     }
+    */
     x_axis = analogRead(JOY_STICK_VRX);
     y_axis = analogRead(JOY_STICK_VRY);
 
@@ -418,7 +534,8 @@ void loop()
     sending_data.x = x_axis;
     sending_data.y = y_axis;
     handleButtons(); // sets pressedButton to what is pressed
-    strcpy(sending_data.buttonCMD,pressedButton);
+    strcpy(sending_data.buttonCMD, pressedButton);
+
     //
     esp_err_t result =
         esp_now_send(0, (uint8_t *)&sending_data, sizeof(data_structure));
