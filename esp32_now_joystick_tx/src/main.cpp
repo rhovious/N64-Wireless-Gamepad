@@ -1,27 +1,103 @@
+// I AM THE SENDER!!!
 #include <WiFi.h>
 #include <esp_now.h>
-#include <U8g2lib.h>
+#include <AsyncElegantOTA.h>
+#include <AsyncTCP.h>
+#include <ESPAsyncWebServer.h>
+#include "secrets.h"
 #include "Arduino.h"
 
-// I AM THE SENDER!!!
 // ==========================================================================
-// REPLACE WITH YOUR ESP RECEIVER'S MAC ADDRESS
-// you the program find_mac_address in this repo to find your ESP32's MAC
-// address
-// 7C:87:CE:F6:DC:78
-uint8_t broadcastAddress1[] = {0x7c, 0x87, 0xCE, 0xF6, 0xDC, 0x78};
-// if you have other receivers you can define in the following
-// uint8_t broadcastAddress2[] = {0xFF, , , , , };
-// uint8_t broadcastAddress3[] = {0xFF, , , , , };
 
-// ==========================================================================
-// your data structure (the data block you send to receiver)
-// your reciever should use the same data structure
+const char *ssid = secret_SSID;   // SSID
+const char *password = secret_PW; // Password
+AsyncWebServer server(80);
+
+// Create an Event Source on /events
+AsyncEventSource events("/events");
+
+unsigned long lastTime = 0;
+unsigned long timerDelay = 200; //delay between web updates
+float temperature;
+float x_axis_web;
+float y_axis_web;
+
+const char index_html[] PROGMEM = R"rawliteral(
+<!DOCTYPE HTML><html>
+<head>
+  <title>n64 Controller Debug</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+  <link rel="icon" href="data:,">
+  <style>
+    html {font-family: Arial; display: inline-block; text-align: center;}
+    p { font-size: 1.2rem;}
+    body {  margin: 0;}
+    .topnav { overflow: hidden; background-color: #50B8B4; color: white; font-size: 1rem; }
+    .content { padding: 20px; }
+    .card { background-color: white; box-shadow: 2px 2px 12px 1px rgba(140,140,140,.5); }
+    .cards { max-width: 800px; margin: 0 auto; display: grid; grid-gap: 2rem; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+    .reading { font-size: 1.4rem; }
+  </style>
+</head>
+<body>
+  <div class="topnav">
+    <h1>n64 Controller Debug</h1>
+  </div>
+  <div class="content">
+    <div class="cards">
+      <div class="card">
+        <p><i class="fas fa-angle-double-down" style="color:#059e8a;"></i> BUTTON</p><p><span class="reading"><span id="temp">%TEMPERATURE%</span> </span></p>
+      </div>
+      <div class="card">
+        <p><i class="fas fa-gamepad" style="color:#00add6;"></i> x</p><p><span class="reading"><span id="hum">%XAXIS%</span></span></p>
+      </div>
+      <div class="card">
+        <p><i class="fas fa-gamepad" style="color:#e1e437;"></i> y</p><p><span class="reading"><span id="pres">%YAXIS%</span></span></p>
+      </div>
+    </div>
+  </div>
+<script>
+if (!!window.EventSource) {
+ var source = new EventSource('/events');
+ 
+ source.addEventListener('open', function(e) {
+  console.log("Events Connected");
+ }, false);
+ source.addEventListener('error', function(e) {
+  if (e.target.readyState != EventSource.OPEN) {
+    console.log("Events Disconnected");
+  }
+ }, false);
+ 
+ source.addEventListener('message', function(e) {
+  console.log("message", e.data);
+ }, false);
+ 
+ source.addEventListener('temperature', function(e) {
+  console.log("temperature", e.data);
+  document.getElementById("temp").innerHTML = e.data;
+ }, false);
+ 
+ source.addEventListener('XAXIS', function(e) {
+  console.log("XAXIS", e.data);
+  document.getElementById("hum").innerHTML = e.data;
+ }, false);
+ 
+ source.addEventListener('YAXIS', function(e) {
+  console.log("YAXIS", e.data);
+  document.getElementById("pres").innerHTML = e.data;
+ }, false);
+}
+</script>
+</body>
+</html>)rawliteral";
+
 typedef struct data_structure
 {
     int x;
     int y;
-    // bool isButtonPressed;
+    
     char buttonCMD[3];
 } data_structure;
 
@@ -74,18 +150,6 @@ int previousDPadLeftState = HIGH;
 int previousDPadDownState = HIGH;
 int previousDPadRightState = HIGH;
 
-//---OLED
-#define SCL 22
-#define SDA 21
-
-U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* clock=*/SCL, /* data=*/SDA, /* reset=*/U8X8_PIN_NONE); // All Boards without Reset of the Display
-
-int xmax = 128;
-int ymax = 62;
-int xcenter = xmax / 2;
-int ycenter = ymax / 2 + 10;
-int arc = 31;
-
 float x_axis;
 float y_axis;
 
@@ -94,50 +158,31 @@ int connected = 0;
 //=============================================================================
 //
 
-void drawGUI(U8G2 u8g2)
+void getControllerReadings()
 {
+    // Convert temperature to Fahrenheit
+    temperature = (float)random(0, 100);
+    x_axis_web = (float)x_axis;
+    y_axis_web = (float)y_axis;
+}
 
-    u8g2.setDrawColor(1); // white
-
-    u8g2.setFont(u8g2_font_6x10_tf);
-
-    // joysticks
-    u8g2.drawCircle(xcenter - 45, ycenter - 6, arc - 15, U8G2_DRAW_ALL);
-    int mappedJoyLposX = map(x_axis, -32737, 32737, -10, 10);
-    int mappedJoyLposy = map(y_axis, -32737, 32737, -10, 10);
-    // int mappedJoyLposX = 10; // REMOVE | SIM TESTING ONLY
-    // int mappedJoyLposy = 10; // REMOVE | SIM TESTING ONLY
-    u8g2.drawBox((xcenter - 45) + mappedJoyLposX, (ycenter - 6) + mappedJoyLposy, 2, 2);
-
-    u8g2.drawCircle(xcenter + 45, ycenter - 6, arc - 15, U8G2_DRAW_ALL);
-    int mappedJoyRposX = map(x_axis, -32737, 32737, -10, 10);
-    int mappedJoyRposy = map(y_axis, -32737, 32737, -10, 10);
-    // int mappedJoyRposX = 10;  // REMOVE | SIM TESTING ONLY
-    // int mappedJoyRposy = -10; // REMOVE | SIM TESTING ONLY
-    u8g2.drawBox((xcenter + 45) + mappedJoyRposX, (ycenter - 6) + mappedJoyRposy, 2, 2);
-
-    // bottom border
-    u8g2.drawBox(0, 54, 128, 10);
-
-    // show label
-    u8g2.drawStr(45, 10, "esp32BLE");
-
-    // CONNECTED INDICATER
-    u8g2.setDrawColor(0); // black
-    if (connected == 0)
+String processor(const String &var)
+{
+    getControllerReadings();
+    // Serial.println(var);
+    if (var == "TEMPERATURE")
     {
-        u8g2.drawStr(5, 62, "dc");
+        return String(temperature);
     }
-    if (connected == 1)
+    else if (var == "XAXIS")
     {
-        u8g2.drawStr(5, 62, "c");
+        return String(x_axis_web);
     }
-
-    // prints out voltage and percentage to OLED
-
-    // u8g2.setCursor(20, 20);  // COMMENT OUT WHEN SIMULATING
-    // u8g2.print(voltage);     // COMMENT OUT WHEN SIMULATING
-    u8g2.drawStr(120, 62, "%");
+    else if (var == "YAXIS")
+    {
+        return String(y_axis_web);
+    }
+    return String();
 }
 
 // callback when data is sent
@@ -387,14 +432,13 @@ void handleButtons()
         digitalWrite(ledPin, HIGH);
     }
 
-/*
     else if (currentCDState == HIGH)
     {
         Serial.println("CD");
         strcpy(pressedButton, "CD");
         digitalWrite(ledPin, HIGH);
     }
-*/
+
     else if (currentCLState == HIGH)
     {
         Serial.println("CL");
@@ -446,7 +490,7 @@ void handleButtons()
 
 void setup()
 {
-      pinMode(ledPin, OUTPUT);
+    pinMode(ledPin, OUTPUT);
 
     pinMode(BTN_START_PIN, INPUT);
     pinMode(BTN_B_PIN, INPUT_PULLDOWN);
@@ -469,16 +513,46 @@ void setup()
     pinMode(JOY_STICK_VRX, INPUT);
     pinMode(JOY_STICK_VRY, INPUT);
 
+    digitalWrite(ledPin, HIGH);
     Serial.begin(115200);
+    //~~~~~~~~~~~~~~~~ WIFI STUP
+    WiFi.mode(WIFI_STA);
+    WiFi.begin(ssid, password);
+    Serial.println("");
 
-    //----OLED SETUP
-    Serial.println("OLED SETUP START");
-    u8g2.begin();
-    u8g2.setFont(u8g2_font_6x10_tf);
-    Serial.println("OLED SETUP DONE");
+    // Wait for connection
+    while (WiFi.status() != WL_CONNECTED)
+    {
+        delay(500);
+        Serial.print(".");
+    }
+    Serial.println("");
+    Serial.print("Connected to ");
+    Serial.println(ssid);
+    Serial.print("IP address: ");
+    Serial.println(WiFi.localIP());
+
+    server.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
+              { request->send(200, "text/plain", "/n64"); });
+
+    server.on("/n64", HTTP_GET, [](AsyncWebServerRequest *request)
+              { request->send_P(200, "text/html", index_html, processor); });
+    // Handle Web Server Events
+    events.onConnect([](AsyncEventSourceClient *client)
+                     {
+    if(client->lastId()){
+      Serial.printf("Client reconnected! Last message ID that it got is: %u\n", client->lastId());
+    }
+    // send event with message "hello!", id current millis
+    // and set reconnect delay to 1 second
+    client->send("hello!", NULL, millis(), 10000); });
+    server.addHandler(&events);
+
+    AsyncElegantOTA.begin(&server); // Start ElegantOTA
+    server.begin();
+    Serial.println("HTTP server started");
 
     // Set device as a Wi-Fi Station'
-    WiFi.mode(WIFI_STA);
 
     if (esp_now_init() != ESP_OK)
     {
@@ -496,24 +570,27 @@ void setup()
     memcpy(peerInfo.peer_addr, broadcastAddress1, 6);
     if (esp_now_add_peer(&peerInfo) != ESP_OK)
     {
-        Serial.println("Failed to add peer");
+        Serial.println("Failed to connect to ESP client");
         return;
     }
+    digitalWrite(ledPin, LOW);
 }
 
 //  MAIN LOOP
 void loop()
 {
-    //----HANDLE OLED
-    /*
+
+    if ((millis() - lastTime) > timerDelay)
     {
-        u8g2.firstPage();
-        do
-        {
-            drawGUI(u8g2);
-        } while (u8g2.nextPage());
+        getControllerReadings();
+        events.send("ping", NULL, millis());
+        events.send(String(pressedButton).c_str(), "temperature", millis());
+        events.send(String(x_axis_web).c_str(), "XAXIS", millis());
+        events.send(String(y_axis_web).c_str(), "YAXIS", millis());
+
+        lastTime = millis();
     }
-    */
+
     x_axis = analogRead(JOY_STICK_VRX);
     y_axis = analogRead(JOY_STICK_VRY);
 
