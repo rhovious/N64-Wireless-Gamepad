@@ -1,0 +1,9 @@
+lib/
+.Trashes
+.metadata*
+.vscode/
+.pio
+**/.DS_Store
+*.stl
+model/OLD
+u8g2-simulator/

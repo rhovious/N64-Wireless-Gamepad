@@ -4,14 +4,17 @@
 #include <AsyncElegantOTA.h>
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
+#include <BleGamepad.h>
 #include "secrets.h"
 #include "webFunctions.h"
 #include "Arduino.h"
+#include "config.h"
 
 // ==========================================================================
-//#define DEBUG
-//#define WEBUI
+// BLE GAMEPAD
+BleGamepad bleGamepad;
 
+// WIFI SETUP
 const char *ssid = secret_SSID;   // SSID
 const char *password = secret_PW; // Password
 AsyncWebServer server(80);
@@ -22,20 +25,21 @@ AsyncEventSource events("/events");
 
 unsigned long lastTime = 0;
 unsigned long timerDelay = 200; // delay between web updates
-float temperature;
+float buttonPressedWeb;
 
 float x_axis_web;
 float y_axis_web;
+int tx_MODE_web;
 #endif
 
-typedef struct data_structure
+typedef struct data_structure_espNOW
 {
     int x;
     int y;
     char buttonCMD[3];
-} data_structure;
+} data_structure_espNOW;
 
-data_structure sending_data;
+data_structure_espNOW sending_data_espNow;
 
 // const int PUSH_BUTTON = 18;
 
@@ -91,25 +95,27 @@ float x_axis_calibration_value;
 float y_axis_calibration_value;
 
 int connected = 0;
+int tx_MODE = 0; // 0 = undefinder, 1 = esp-now, 2 = BLE
 
 //=============================================================================
 //
 #ifdef WEBUI
-void getControllerReadings()
+void getControllerReadingsforWeb()
 {
     // Convert temperature to Fahrenheit
-    temperature = (float)random(0, 100);
+    buttonPressedWeb = (float)random(0, 100);
     x_axis_web = (float)x_axis;
     y_axis_web = (float)y_axis;
+    tx_MODE_web = (int)tx_MODE;
 }
 
 String processor(const String &var)
 {
-    getControllerReadings();
+    getControllerReadingsforWeb();
     // Serial.println(var);
-    if (var == "TEMPERATURE")
+    if (var == "buttonPressedWeb")
     {
-        return String(temperature);
+        return String(buttonPressedWeb);
     }
     else if (var == "XAXIS")
     {
@@ -118,6 +124,10 @@ String processor(const String &var)
     else if (var == "YAXIS")
     {
         return String(y_axis_web);
+    }
+    else if (var == "TX_MODE")
+    {
+        return String(tx_MODE_web);
     }
     return String();
 }
@@ -139,6 +149,24 @@ void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status)
     Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Delivery Success"
                                                   : "Delivery Fail");
 #endif
+}
+
+void handleSticks()
+{
+    int axis_max = 4095;
+    x_axis_read = analogRead(JOY_STICK_VRX);
+    y_axis_read = analogRead(JOY_STICK_VRY);
+
+    // Convert joy stick value from -45 to 45
+    x_axis = (x_axis_read - axis_max / 2) / 22.76;
+    y_axis = (y_axis_read - axis_max / 2) / 22.76;
+
+    if (tx_MODE == 2)
+    {
+        bleGamepad.setLeftThumb(x_axis, y_axis); // or bleGamepad.setX(32767); and bleGamepad.setY(32767);
+        bleGamepad.sendReport();
+        delay(10);
+    }
 }
 
 void handleButtons()
@@ -165,6 +193,14 @@ void handleButtons()
 #ifdef DEBUG
         Serial.println("B");
 #endif
+        if (tx_MODE == 2)
+        {
+            bleGamepad.press(BUTTON_1);
+            bleGamepad.sendReport();
+            delay(100);
+            bleGamepad.release(BUTTON_1);
+            bleGamepad.sendReport();
+        }
         strcpy(pressedButton, "B");
         digitalWrite(ledPin, HIGH);
     }
@@ -174,6 +210,10 @@ void handleButtons()
 #ifdef DEBUG
         Serial.println("START");
 #endif
+        if (tx_MODE == 2)
+        {
+            bleGamepad.press(BUTTON_2);
+        }
         strcpy(pressedButton, "S");
         digitalWrite(ledPin, HIGH);
     }
@@ -183,6 +223,10 @@ void handleButtons()
 #ifdef DEBUG
         Serial.println("A");
 #endif
+        if (tx_MODE == 2)
+        {
+            bleGamepad.press(BUTTON_3);
+        }
         strcpy(pressedButton, "A");
         // turn LED on:
         digitalWrite(ledPin, HIGH);
@@ -193,6 +237,10 @@ void handleButtons()
 #ifdef DEBUG
         Serial.println("SR");
 #endif
+        if (tx_MODE == 2)
+        {
+            bleGamepad.press(BUTTON_4);
+        }
         strcpy(pressedButton, "SR");
         // turn LED on:
         digitalWrite(ledPin, HIGH);
@@ -203,6 +251,10 @@ void handleButtons()
 #ifdef DEBUG
         Serial.println("SL");
 #endif
+        if (tx_MODE == 2)
+        {
+            bleGamepad.press(BUTTON_5);
+        }
         strcpy(pressedButton, "SL");
         // turn LED on:
         digitalWrite(ledPin, HIGH);
@@ -213,6 +265,10 @@ void handleButtons()
 #ifdef DEBUG
         Serial.println("Z");
 #endif
+        if (tx_MODE == 2)
+        {
+            bleGamepad.press(BUTTON_6);
+        }
         strcpy(pressedButton, "Z");
         // turn LED on:
         digitalWrite(ledPin, HIGH);
@@ -224,6 +280,10 @@ void handleButtons()
 #ifdef DEBUG
         Serial.println("CU");
 #endif
+        if (tx_MODE == 2)
+        {
+            bleGamepad.press(BUTTON_7);
+        }
         strcpy(pressedButton, "CU");
         digitalWrite(ledPin, HIGH);
     }
@@ -233,6 +293,10 @@ void handleButtons()
 #ifdef DEBUG
         Serial.println("CD");
 #endif
+        if (tx_MODE == 2)
+        {
+            bleGamepad.press(BUTTON_8);
+        }
         strcpy(pressedButton, "CD");
         digitalWrite(ledPin, HIGH);
     }
@@ -242,6 +306,10 @@ void handleButtons()
 #ifdef DEBUG
         Serial.println("CL");
 #endif
+        if (tx_MODE == 2)
+        {
+            bleGamepad.press(BUTTON_9);
+        }
         strcpy(pressedButton, "CL");
         digitalWrite(ledPin, HIGH);
     }
@@ -250,6 +318,10 @@ void handleButtons()
 #ifdef DEBUG
         Serial.println("CR");
 #endif
+        if (tx_MODE == 2)
+        {
+            bleGamepad.press(BUTTON_10);
+        }
         strcpy(pressedButton, "CR");
         digitalWrite(ledPin, HIGH);
     }
@@ -260,6 +332,10 @@ void handleButtons()
 #ifdef DEBUG
         Serial.println("DU");
 #endif
+        if (tx_MODE == 2)
+        {
+            bleGamepad.press(BUTTON_11);
+        }
         strcpy(pressedButton, "DU");
         digitalWrite(ledPin, HIGH);
     }
@@ -269,6 +345,10 @@ void handleButtons()
 #ifdef DEBUG
         Serial.println("DD");
 #endif
+        if (tx_MODE == 2)
+        {
+            bleGamepad.press(BUTTON_12);
+        }
         strcpy(pressedButton, "DD");
         digitalWrite(ledPin, HIGH);
     }
@@ -278,6 +358,10 @@ void handleButtons()
 #ifdef DEBUG
         Serial.println("DL");
 #endif
+        if (tx_MODE == 2)
+        {
+            bleGamepad.press(BUTTON_31);
+        }
         strcpy(pressedButton, "DL");
         digitalWrite(ledPin, HIGH);
     }
@@ -286,6 +370,10 @@ void handleButtons()
 #ifdef DEBUG
         Serial.println("DR");
 #endif
+        if (tx_MODE == 2)
+        {
+            bleGamepad.press(BUTTON_14);
+        }
         strcpy(pressedButton, "DR");
         digitalWrite(ledPin, HIGH);
     }
@@ -371,6 +459,25 @@ void setupESPNOW()
     }
 #endif
 }
+void setMode()
+{
+    int currentBState = digitalRead(BTN_B_PIN);
+    int currentAState = digitalRead(BTN_A_PIN);
+
+    if (currentAState == HIGH && currentBState == LOW) // SETS TO ESP-NOW MODE
+    {
+        tx_MODE = 1
+    }
+    else if (currentBState == HIGH && currentAState == LOW)
+    {
+        tx_MODE = 2 // SETS TO BLE MODE
+    }
+    else // NO TRANSMIT
+    {
+        tx_MODE = 0
+    }
+}
+
 void setStickCalibration()
 {
     x_axis_read = analogRead(JOY_STICK_VRX);
@@ -395,8 +502,8 @@ void setup()
 
     setupWifi();
     setStickCalibration();
-#ifdef DEBUG
     Serial.begin(115200);
+#ifdef DEBUG
     printCompilationInfi();
 #endif
 #ifdef WEBUI
@@ -408,11 +515,10 @@ void setup()
     // Handle Web Server Events
     events.onConnect([](AsyncEventSourceClient *client)
                      {
-#ifdef DEBUG
+
     if(client->lastId()){
       Serial.printf("Client reconnected! Last message ID that it got is: %u\n", client->lastId());
     }
-#endif
     // send event with message "hello!", id current millis
     // and set reconnect delay to 1 second
     client->send("hello!", NULL, millis(), 10000); });
@@ -420,10 +526,20 @@ void setup()
 #endif
     AsyncElegantOTA.begin(&server); // Start ElegantOTA
     server.begin();
-#ifdef DEBUG
     Serial.println("HTTP server started");
-#endif
-    setupESPNOW();
+
+    setMode();
+
+    if (tx_MODE == 2)
+    {
+        bleGamepad.begin();
+        Serial.println("Starting BLE work!");
+    }
+
+    if (tx_MODE == 1)
+    {
+        setupESPNOW();
+    }
 
     digitalWrite(ledPin, LOW);
 }
@@ -434,23 +550,46 @@ void loop()
 #ifdef WEBUI
     if ((millis() - lastTime) > timerDelay)
     {
-        getControllerReadings();
+        getControllerReadingsforWeb();
         events.send("ping", NULL, millis());
         events.send(String(pressedButton).c_str(), "temperature", millis());
         events.send(String(x_axis_web).c_str(), "XAXIS", millis());
         events.send(String(y_axis_web).c_str(), "YAXIS", millis());
+        events.send(String(tx_MODE_web).c_str(), "TX_MODE", millis());
 
         lastTime = millis();
     }
 #endif
-    x_axis_read = analogRead(JOY_STICK_VRX);
-    y_axis_read = analogRead(JOY_STICK_VRY);
 
-    int axis_max = 4095;
-    // Convert joy stick value from -45 to 45
-    x_axis = (x_axis_read - axis_max / 2) / 22.76;
-    y_axis = (y_axis_read - axis_max / 2) / 22.76;
+    if (tx_MODE == 1) // ESP-NOW
+    {
+        sending_data_espNow.x = x_axis;
+        sending_data_espNow.y = y_axis;
+        handleButtons(); // sets pressedButton to what is pressed
+        handleSticks();  // sets sticks to value
+        strcpy(sending_data_espNow.buttonCMD, pressedButton);
+        esp_err_t result =
+            esp_now_send(0, (uint8_t *)&sending_data_espNow, sizeof(data_structure_espNOW));
+
+        if (result == ESP_OK)
+        {
+            Serial.println("Sent with success");
+            connected = 1;
+        }
+        else
+        {
+            Serial.println("Error sending the data");
+            connected = 0;
+        }
+    }
+    if (tx_MODE == 2) // BLE
+    {
+        handleButtons(); // sets pressedButton to what is pressed
+        handleSticks();  // sets sticks to value
+    }
 #ifdef DEBUG
+    Serial.print("MODE: ");
+    Serial.println(tx_MODE); // 0 = undefinder, 1 = esp-now, 2 = BLE
     Serial.print("X_axis: ");
     Serial.print(x_axis, 0); // round off to the first dicimal place
     Serial.print("\n");
@@ -461,27 +600,6 @@ void loop()
     Serial.print(pressedButton);
     Serial.print("\n\n");
 #endif
-    sending_data.x = x_axis;
-    sending_data.y = y_axis;
-    handleButtons(); // sets pressedButton to what is pressed
-    strcpy(sending_data.buttonCMD, pressedButton);
-
-    //
-    esp_err_t result =
-        esp_now_send(0, (uint8_t *)&sending_data, sizeof(data_structure));
-#ifdef DEBUG
-    if (result == ESP_OK)
-    {
-        Serial.println("Sent with success");
-        connected = 1;
-    }
-    else
-    {
-        Serial.println("Error sending the data");
-        connected = 0;
-    }
-#endif
     delay(100);
 }
 //=============================================================================
-// END

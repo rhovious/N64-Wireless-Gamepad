@@ -34,6 +34,9 @@ const char index_html[] PROGMEM = R"rawliteral(
       <div class="card">
         <p><i class="fas fa-gamepad" style="color:#e1e437;"></i> y</p><p><span class="reading"><span id="pres">%YAXIS%</span></span></p>
       </div>
+            <div class="card">
+        <p><i class="fas fa-gamepad" style="color:#e1e437;"></i> y</p><p><span class="reading"><span id="TX_MODE">%YAXIS%</span></span></p>
+      </div>
     </div>
   </div>
 <script>
@@ -66,6 +69,11 @@ if (!!window.EventSource) {
  source.addEventListener('YAXIS', function(e) {
   console.log("YAXIS", e.data);
   document.getElementById("pres").innerHTML = e.data;
+ }, false);
+
+  source.addEventListener('TX_MODE', function(e) {
+  console.log("TX_MODE", e.data);
+  document.getElementById("ex_mode").innerHTML = e.data;
  }, false);
 }
 </script>
