@@ -12,7 +12,8 @@
 
 // ==========================================================================
 // BLE GAMEPAD
-BleGamepad bleGamepad;
+
+BleGamepad bleGamepad(secret_BLEDeviceName, secret_BLEDeviceManufacturer, 100);
 
 // WIFI SETUP
 const char *ssid = secret_SSID;   // SSID
@@ -21,12 +22,14 @@ AsyncWebServer server(80);
 
 #ifdef WEBUI
 // Create an Event Source on /events
-AsyncEventSource events("/events");
+AsyncEventSource events("/events1");
 
 unsigned long lastTime = 0;
 unsigned long timerDelay = 200; // delay between web updates
 float buttonPressedWeb;
 
+float x_axis;
+float y_axis;
 float x_axis_web;
 float y_axis_web;
 int tx_MODE_web;
@@ -196,10 +199,9 @@ void handleButtons()
         if (tx_MODE == 2)
         {
             bleGamepad.press(BUTTON_1);
-            bleGamepad.sendReport();
-            delay(100);
-            bleGamepad.release(BUTTON_1);
-            bleGamepad.sendReport();
+            //bleGamepad.sendReport();
+            //delay(100);
+            //bleGamepad.sendReport();
         }
         strcpy(pressedButton, "B");
         digitalWrite(ledPin, HIGH);
@@ -360,7 +362,7 @@ void handleButtons()
 #endif
         if (tx_MODE == 2)
         {
-            bleGamepad.press(BUTTON_31);
+            bleGamepad.press(BUTTON_13);
         }
         strcpy(pressedButton, "DL");
         digitalWrite(ledPin, HIGH);
@@ -380,6 +382,24 @@ void handleButtons()
 
     else
     {
+        if (tx_MODE == 2)
+        {
+
+            bleGamepad.release(BUTTON_1);
+            bleGamepad.release(BUTTON_2);
+            bleGamepad.release(BUTTON_3);
+            bleGamepad.release(BUTTON_4);
+            bleGamepad.release(BUTTON_5);
+            bleGamepad.release(BUTTON_6);
+            bleGamepad.release(BUTTON_7);
+            bleGamepad.release(BUTTON_8);
+            bleGamepad.release(BUTTON_9);
+            bleGamepad.release(BUTTON_10);
+            bleGamepad.release(BUTTON_11);
+            bleGamepad.release(BUTTON_12);
+            bleGamepad.release(BUTTON_13);
+            bleGamepad.release(BUTTON_14);
+        }
         strcpy(pressedButton, "0");
         digitalWrite(ledPin, LOW); // turn LED off:
     }
@@ -466,15 +486,15 @@ void setMode()
 
     if (currentAState == HIGH && currentBState == LOW) // SETS TO ESP-NOW MODE
     {
-        tx_MODE = 1
+        tx_MODE = 1;
     }
     else if (currentBState == HIGH && currentAState == LOW)
     {
-        tx_MODE = 2 // SETS TO BLE MODE
+        tx_MODE = 2; // SETS TO BLE MODE
     }
     else // NO TRANSMIT
     {
-        tx_MODE = 0
+        tx_MODE = 0;
     }
 }
 
@@ -503,9 +523,7 @@ void setup()
     setupWifi();
     setStickCalibration();
     Serial.begin(115200);
-#ifdef DEBUG
-    printCompilationInfi();
-#endif
+
 #ifdef WEBUI
     server.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
               { request->send(200, "text/plain", "/n64"); });
@@ -532,13 +550,32 @@ void setup()
 
     if (tx_MODE == 2)
     {
-        bleGamepad.begin();
+        bleGamepad.begin(14,0, true, true, false,false,false,false,false,false,false,false,false,false,false);
+          // The default bleGamepad.begin() above is the same as bleGamepad.begin(16, 1, true, true, true, true, true, true, true, true, false, false, false, false, false);
+  // which enables a gamepad with 16 buttons, 1 hat switch, enabled x, y, z, rZ, rX, rY, slider 1, slider 2 and disabled rudder, throttle, accelerator, brake, steering
+  // Auto reporting is enabled by default. 
+  // Use bleGamepad.setAutoReport(false); to disable auto reporting, and then use bleGamepad.sendReport(); as needed
         Serial.println("Starting BLE work!");
+        digitalWrite(ledPin, LOW);
+        delay(100);
+        digitalWrite(ledPin, HIGH);
+        delay(500);
+        digitalWrite(ledPin, LOW);
+        delay(100);
+        digitalWrite(ledPin, HIGH);
+        delay(500);
+        digitalWrite(ledPin, LOW);
     }
 
     if (tx_MODE == 1)
     {
         setupESPNOW();
+        Serial.println("Starting ESP NOW");
+        digitalWrite(ledPin, LOW);
+        delay(100);
+        digitalWrite(ledPin, HIGH);
+        delay(500);
+        digitalWrite(ledPin, LOW);
     }
 
     digitalWrite(ledPin, LOW);
