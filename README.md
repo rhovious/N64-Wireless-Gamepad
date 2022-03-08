@@ -28,7 +28,7 @@
 <!-- PROJECT LOGO -->
 <br />
 <div align="center">
-  <a href="https://github.com/rhovious/ESP-NOW-gamepad">
+  <a href="https://github.com/rhovious/N64-Wireless-Gamepad">
     <img src="images/logo.png" alt="Logo" width="80" height="80">
   </a>
 
@@ -37,14 +37,14 @@
   <p align="center">
     n64 gamepad with BLE or ESP-now capabilities
     <br />
-    <a href="https://github.com/rhovious/ESP-NOW-gamepad"><strong>Explore the docs »</strong></a>
+    <a href="https://github.com/rhovious/N64-Wireless-Gamepad"><strong>Explore the docs »</strong></a>
     <br />
     <br />
-    <a href="https://github.com/rhovious/ESP-NOW-gamepad">View Source</a>
+    <a href="https://github.com/rhovious/N64-Wireless-Gamepad">View Source</a>
     ·
-    <a href="https://github.com/rhovious/ESP-NOW-gamepad/issues">Report Bug</a>
+    <a href="https://github.com/rhovious/N64-Wireless-Gamepad/issues">Report Bug</a>
     ·
-    <a href="https://github.com/rhovious/ESP-NOW-gamepad/issues">Request Feature</a>
+    <a href="https://github.com/rhovious/N64-Wireless-Gamepad/issues">Request Feature</a>
   </p>
 </div>
 
@@ -57,7 +57,7 @@
     <li>
       <a href="#about-the-project">About The Project</a>
       <ul>
-        <li><a href="#built-with">Built With</a></li>
+        <li><a href="#required-libraries">Required Libraries</a></li>
       </ul>
     </li>
     <li>
@@ -68,10 +68,9 @@
       </ul>
     </li>
     <li><a href="#usage">Usage</a></li>
-    <li><a href="#roadmap">Roadmap</a></li>
-    <li><a href="#contributing">Contributing</a></li>
-    <li><a href="#license">License</a></li>
-    <li><a href="#contact">Contact</a></li>
+
+
+
     <li><a href="#acknowledgments">Acknowledgments</a></li>
   </ol>
 </details>
@@ -138,15 +137,15 @@ Distributed under the MIT License. See `LICENSE.txt` for more information.
 
 
 <!-- MARKDOWN LINKS & IMAGES -->
-<!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
+
 [contributors-shield]: https://img.shields.io/github/contributors/rhovious/ESP-NOW-gamepad.svg?style=for-the-badge
-[contributors-url]: https://github.com/rhovious/ESP-NOW-gamepad/graphs/contributors
+[contributors-url]: https://github.com/rhovious/N64-Wireless-Gamepad/graphs/contributors
 [forks-shield]: https://img.shields.io/github/forks/rhovious/ESP-NOW-gamepad.svg?style=for-the-badge
-[forks-url]: https://github.com/rhovious/ESP-NOW-gamepad/network/members
+[forks-url]: https://github.com/rhovious/N64-Wireless-Gamepad/network/members
 [stars-shield]: https://img.shields.io/github/stars/rhovious/ESP-NOW-gamepad.svg?style=for-the-badge
-[stars-url]: https://github.com/rhovious/ESP-NOW-gamepad/stargazers
+[stars-url]: https://github.com/rhovious/N64-Wireless-Gamepad/stargazers
 [issues-shield]: https://img.shields.io/github/issues/rhovious/ESP-NOW-gamepad.svg?style=for-the-badge
-[issues-url]: https://github.com/rhovious/ESP-NOW-gamepad/issues
+[issues-url]: https://github.com/rhovious/N64-Wireless-Gamepad/issues
 [license-shield]: https://img.shields.io/github/license/rhovious/ESP-NOW-gamepad.svg?style=for-the-badge
-[license-url]: https://github.com/rhovious/ESP-NOW-gamepad/blob/master/LICENSE.txt
+[license-url]: https://github.com/rhovious/N64-Wireless-Gamepad/blob/master/LICENSE.txt
 
