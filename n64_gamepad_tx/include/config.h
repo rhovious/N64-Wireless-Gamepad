@@ -1,8 +1,5 @@
 #include "Arduino.h"
 
-String __version__ = "0.0.2";
-String ARDUINO_MCU = "esp32dev";
-
 //~~~ FEATURE SETTINGS ~~~~~~~~~~~~~~~~~
 #define DEBUG
 #define WEBUI
