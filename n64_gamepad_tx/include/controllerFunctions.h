@@ -1,10 +1,16 @@
 #include "Arduino.h"
-#include "config.h"
 #include <BleGamepad.h>
-
 
 BleGamepad bleGamepad(secret_BLEDeviceName, secret_BLEDeviceManufacturer, 100);
 
+typedef struct data_structure_espNOW
+{
+    int x;
+    int y;
+    char buttonCMD[3];
+} data_structure_espNOW;
+
+data_structure_espNOW sending_data_espNow;
 
 const int ledPin = 4; // the number of the LED pin
 
@@ -49,10 +55,17 @@ int previousDPadLeftState = HIGH;
 int previousDPadDownState = HIGH;
 int previousDPadRightState = HIGH;
 
-float x_axis_read;
-float y_axis_read;
-float x_axis;
-float y_axis;
+long x_axis_adjusted;
+long y_axis_adjusted;
+extern int x_raw_min;
+extern int x_raw_max;
+extern int y_raw_min;
+extern int y_raw_max;
+
+extern int x_deadzone_high;
+extern int x_deadzone_low;
+extern int y_deadzone_high;
+extern int y_deadzone_low;
 
 float x_axis_calibration_value;
 float y_axis_calibration_value;
@@ -62,21 +75,117 @@ int tx_MODE = 0; // 0 = undefinder, 1 = esp-now, 2 = BLE
 
 char pressedButton[3] = "0";
 
-void handleSticks()
+void setMode()
 {
-    int axis_max = 4095;
-    x_axis_read = analogRead(JOY_STICK_VRX);
-    y_axis_read = analogRead(JOY_STICK_VRY);
+    int currentBState = digitalRead(BTN_B_PIN);
+    int currentAState = digitalRead(BTN_A_PIN);
 
-    // Convert joy stick value from -45 to 45
-    x_axis = (x_axis_read - axis_max / 2) / 22.76;
-    y_axis = (y_axis_read - axis_max / 2) / 22.76;
+    if (currentAState == HIGH && currentBState == LOW) // SETS TO ESP-NOW MODE
+    {
+        tx_MODE = 1;
+    }
+    else if (currentBState == HIGH && currentAState == LOW)
+    {
+        tx_MODE = 2; // SETS TO BLE MODE
+    }
+    else // NO TRANSMIT
+    {
+        tx_MODE = 0;
+    }
 
     if (tx_MODE == 2)
     {
-        bleGamepad.setLeftThumb(x_axis, y_axis); // or bleGamepad.setX(32767); and bleGamepad.setY(32767);
-        bleGamepad.sendReport();
-        delay(10);
+        bleGamepad.begin(14, 0, true, true, false, false, false, false, false, false, false, false, false, false, false);
+        // The default bleGamepad.begin() above is the same as bleGamepad.begin(16, 1, true, true, true, true, true, true, true, true, false, false, false, false, false);
+        // which enables a gamepad with 16 buttons, 1 hat switch, enabled x, y, z, rZ, rX, rY, slider 1, slider 2 and disabled rudder, throttle, accelerator, brake, steering
+        // Auto reporting is enabled by default.
+        // Use bleGamepad.setAutoReport(false); to disable auto reporting, and then use bleGamepad.sendReport(); as needed
+        Serial.println("Starting BLE work!");
+        digitalWrite(ledPin, LOW);
+        delay(100);
+        digitalWrite(ledPin, HIGH);
+        delay(500);
+        digitalWrite(ledPin, LOW);
+        delay(100);
+        digitalWrite(ledPin, HIGH);
+        delay(500);
+        digitalWrite(ledPin, LOW);
+    }
+
+    if (tx_MODE == 1)
+    {
+        setupESPNOW();
+        Serial.println("Starting ESP NOW");
+        digitalWrite(ledPin, LOW);
+        delay(100);
+        digitalWrite(ledPin, HIGH);
+        delay(500);
+        digitalWrite(ledPin, LOW);
+    }
+}
+
+void handleSticks()
+{
+    long x_axis_raw = analogRead(JOY_STICK_VRX);
+    long y_axis_raw = analogRead(JOY_STICK_VRY);
+
+    // map(value, fromLow, fromHigh, toLow, toHigh)
+    float x_axis_mapped = map(x_axis_raw, x_raw_min, x_raw_max, -32767, 32767);
+    float y_axis_mapped = map(y_axis_raw, y_raw_min, y_raw_max, -32767, 32767);
+
+    //~~sets as raw readings
+    // x_axis_adjusted = x_axis_raw;
+    // y_axis_adjusted = y_axis_raw;
+
+    //~~maps based on calibration
+    y_axis_adjusted = y_axis_mapped - y_axis_calibration_value;
+    x_axis_adjusted = x_axis_mapped - x_axis_calibration_value;
+
+    //~~adjusts based on deadzones
+
+    if (x_axis_mapped > x_deadzone_low && x_axis_mapped < x_deadzone_high)
+    {
+        x_axis_adjusted = 0;
+    }
+    else
+    {
+        x_axis_adjusted = x_axis_adjusted;
+    }
+
+    if (y_axis_mapped > y_deadzone_low && y_axis_mapped < y_deadzone_high)
+    {
+        y_axis_adjusted = 0;
+    }
+    else
+    {
+        y_axis_adjusted = y_axis_adjusted;
+    }
+
+    if (tx_MODE == 1) // ESP-NOW
+    {
+        sending_data_espNow.x = x_axis_adjusted;
+        sending_data_espNow.y = y_axis_adjusted;
+        strcpy(sending_data_espNow.buttonCMD, pressedButton);
+        esp_err_t result =
+            esp_now_send(0, (uint8_t *)&sending_data_espNow, sizeof(data_structure_espNOW));
+
+        if (result == ESP_OK)
+        {
+            Serial.println("Sent with success");
+            connected = 1;
+        }
+        else
+        {
+            Serial.println("Error sending the data");
+            connected = 0;
+        }
+    }
+
+    if (tx_MODE == 2)
+    {
+        bleGamepad.setLeftThumb(x_axis_adjusted, y_axis_adjusted); // or bleGamepad.setX(32767); and bleGamepad.setY(32767);
+        // bleGamepad.sendReport();
+        // delay(10);
     }
 }
 
@@ -101,15 +210,10 @@ void handleButtons()
 
     if (currentBState == HIGH)
     {
-#ifdef DEBUG
         Serial.println("B");
-#endif
         if (tx_MODE == 2)
         {
             bleGamepad.press(BUTTON_1);
-            //bleGamepad.sendReport();
-            //delay(100);
-            //bleGamepad.sendReport();
         }
         strcpy(pressedButton, "B");
         digitalWrite(ledPin, HIGH);
@@ -117,9 +221,7 @@ void handleButtons()
 
     else if (currentStartState == HIGH)
     {
-#ifdef DEBUG
         Serial.println("START");
-#endif
         if (tx_MODE == 2)
         {
             bleGamepad.press(BUTTON_2);
@@ -130,9 +232,7 @@ void handleButtons()
 
     else if (currentAState == HIGH)
     {
-#ifdef DEBUG
         Serial.println("A");
-#endif
         if (tx_MODE == 2)
         {
             bleGamepad.press(BUTTON_3);
@@ -144,9 +244,7 @@ void handleButtons()
 
     else if (currentSRState == HIGH)
     {
-#ifdef DEBUG
         Serial.println("SR");
-#endif
         if (tx_MODE == 2)
         {
             bleGamepad.press(BUTTON_4);
@@ -158,9 +256,7 @@ void handleButtons()
 
     else if (currentSLState == HIGH)
     {
-#ifdef DEBUG
         Serial.println("SL");
-#endif
         if (tx_MODE == 2)
         {
             bleGamepad.press(BUTTON_5);
@@ -172,9 +268,7 @@ void handleButtons()
 
     else if (currentZState == HIGH)
     {
-#ifdef DEBUG
         Serial.println("Z");
-#endif
         if (tx_MODE == 2)
         {
             bleGamepad.press(BUTTON_6);
@@ -187,9 +281,7 @@ void handleButtons()
     //~~~~~~~C PAD
     else if (currentCUPState == HIGH)
     {
-#ifdef DEBUG
         Serial.println("CU");
-#endif
         if (tx_MODE == 2)
         {
             bleGamepad.press(BUTTON_7);
@@ -200,9 +292,7 @@ void handleButtons()
 
     else if (currentCDState == HIGH)
     {
-#ifdef DEBUG
         Serial.println("CD");
-#endif
         if (tx_MODE == 2)
         {
             bleGamepad.press(BUTTON_8);
@@ -213,9 +303,7 @@ void handleButtons()
 
     else if (currentCLState == HIGH)
     {
-#ifdef DEBUG
         Serial.println("CL");
-#endif
         if (tx_MODE == 2)
         {
             bleGamepad.press(BUTTON_9);
@@ -225,9 +313,7 @@ void handleButtons()
     }
     else if (currentCRState == HIGH)
     {
-#ifdef DEBUG
         Serial.println("CR");
-#endif
         if (tx_MODE == 2)
         {
             bleGamepad.press(BUTTON_10);
@@ -239,9 +325,7 @@ void handleButtons()
     //~~~~~~~D PAD
     else if (currentDUPState == HIGH)
     {
-#ifdef DEBUG
         Serial.println("DU");
-#endif
         if (tx_MODE == 2)
         {
             bleGamepad.press(BUTTON_11);
@@ -252,9 +336,7 @@ void handleButtons()
 
     else if (currentDDState == HIGH)
     {
-#ifdef DEBUG
         Serial.println("DD");
-#endif
         if (tx_MODE == 2)
         {
             bleGamepad.press(BUTTON_12);
@@ -265,9 +347,7 @@ void handleButtons()
 
     else if (currentDLState == HIGH)
     {
-#ifdef DEBUG
         Serial.println("DL");
-#endif
         if (tx_MODE == 2)
         {
             bleGamepad.press(BUTTON_13);
@@ -277,9 +357,7 @@ void handleButtons()
     }
     else if (currentDRState == HIGH)
     {
-#ifdef DEBUG
         Serial.println("DR");
-#endif
         if (tx_MODE == 2)
         {
             bleGamepad.press(BUTTON_14);
@@ -292,7 +370,6 @@ void handleButtons()
     {
         if (tx_MODE == 2)
         {
-
             bleGamepad.release(BUTTON_1);
             bleGamepad.release(BUTTON_2);
             bleGamepad.release(BUTTON_3);
@@ -340,17 +417,19 @@ void setPinModes()
 
 void setStickCalibration()
 {
-    x_axis_read = analogRead(JOY_STICK_VRX);
-    y_axis_read = analogRead(JOY_STICK_VRY);
+    float x_axis_raw = analogRead(JOY_STICK_VRX);
+    float y_axis_raw = analogRead(JOY_STICK_VRY);
 
-    int axis_max = 4095;
-    // Convert joy stick value from -45 to 45
-    x_axis_calibration_value = (x_axis_read - axis_max / 2) / 22.76;
-    y_axis_calibration_value = (y_axis_read - axis_max / 2) / 22.76;
-#ifdef DEBUG
+    // int axis_max = 4095;
+    //  Convert joy stick value from -45 to 45
+    //  x_axis_calibration_value = (x_axis_raw - axis_max / 2) / 22.76;
+    //  y_axis_calibration_value = (y_axis_raw - axis_max / 2) / 22.76;
+
+    x_axis_calibration_value = map(x_axis_raw, x_raw_min, x_raw_max, -32767, 32767);
+    y_axis_calibration_value = map(y_axis_raw, y_raw_min, y_raw_max, -32767, 32767);
+
     Serial.print("X CALIBRATED VALUE: ");
     Serial.println(x_axis_calibration_value);
     Serial.print("Y CALIBRATED VALUE: ");
     Serial.println(y_axis_calibration_value);
-#endif
 }

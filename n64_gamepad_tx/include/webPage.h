@@ -231,9 +231,9 @@ const char index_html[] PROGMEM = R"rawliteral(
         <i class="fas fa-angle-double-down" style="color: #059e8a"></i> BUTTON:
         <span class="reading"><span id="temp">%TEMPERATURE%</span> </span>
         <i class="fas fa-gamepad" style="color: #00add6"></i> x:
-        <span class="reading"><span id="hum">%XAXIS%</span></span>
+        <span class="reading"><span id="xAxisSpan">%XAXIS%</span></span>
         <i class="fas fa-gamepad" style="color: #e1e437"></i> y:
-        <span class="reading"><span id="pres">%YAXIS%</span></span>
+        <span class="reading"><span id="yAxisSpan">%YAXIS%</span></span>
       </p>
       <p>
         <i class="fas fa-gamepad" style="color: #e1e437"></i> mode (1=ESP-NOW,
@@ -244,7 +244,7 @@ const char index_html[] PROGMEM = R"rawliteral(
       <!--
         <div class="cards">
           <div class="card">
-            <p><i class="fas fa-angle-double-down" style="color:#059e8a;"></i> BUTTON</p><p><span class="reading"><span id="temp">%TEMPERATURE%</span> </span></p>
+            <p><i class="fas fa-angle-double-down" style="color:#059e8a;"></i> BUTTON</p><p><span class="reading"><span id="buttonSpan">%BUTTONPRESSED%</span> </span></p>
           </div>
           <div class="card">
             <p><i class="fas fa-gamepad" style="color:#00add6;"></i> x</p><p><span class="reading"><span id="hum">%XAXIS%</span></span></p>
@@ -282,19 +282,19 @@ const char index_html[] PROGMEM = R"rawliteral(
       //console.log("message", e.data);
      }, false);
      
-     source.addEventListener('temperature', function(e) {
-      //console.log("temperature", e.data);
-      document.getElementById("temp").innerHTML = e.data;
+     source.addEventListener('BUTTONPRESSED', function(e) {
+      //console.log("BUTTONPRESSED", e.data);
+      document.getElementById("buttonSpan").innerHTML = e.data;
      }, false);
      
      source.addEventListener('XAXIS', function(e) {
       //console.log("XAXIS", e.data);
-      document.getElementById("hum").innerHTML = e.data;
+      document.getElementById("xAxisSpan").innerHTML = e.data;
      }, false);
      
      source.addEventListener('YAXIS', function(e) {
       //console.log("YAXIS", e.data);
-      document.getElementById("pres").innerHTML = e.data;
+      document.getElementById("yAxisSpan").innerHTML = e.data;
      }, false);
     
       source.addEventListener('TX_MODE', function(e) {
