@@ -90,7 +90,7 @@ void setMode()
     }
     else // NO TRANSMIT
     {
-        tx_MODE = 0;
+        tx_MODE = 1; //FIX THIS
     }
 
     if (tx_MODE == 2)
