@@ -68,7 +68,7 @@ void loop()
     handleButtons(); // sets pressedButton to what is pressed
     handleSticks();  // sets sticks to value
 
-    printInfo(); // prints out to serial
+    //printInfo(); // prints out to serial
 
     delay(100);
 }
